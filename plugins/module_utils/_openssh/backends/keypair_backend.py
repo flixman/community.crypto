@@ -62,7 +62,9 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
             else "always"
         )
         self.state: t.Literal["present", "absent"] = self.module.params["state"]
-        self.type: t.Literal["rsa", "dsa", "rsa1", "ecdsa", "ed25519"] = (
+        self.type: t.Literal[
+            "rsa", "dsa", "rsa1", "ecdsa", "ed25519", "mldsa44"
+        ] = (
             self.module.params["type"]
         )
 
@@ -97,7 +99,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
                     + "Attempting to use bit lengths other than these three values for ECDSA keys will "
                     + "cause this module to fail."
                 )
-        elif self.type == "ed25519":
+        elif self.type in ("ed25519", "mldsa44"):
             # User input is ignored for `key size` when `key type` is ed25519
             result = 256
         else:
@@ -204,7 +206,8 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
 
         return all(
             [
-                self.size == self.original_private_key.size,
+                self.type in ("ed25519", "mldsa44")
+                or self.size == self.original_private_key.size,
                 self.type == self.original_private_key.type,
                 self._private_key_valid_backend(self.original_private_key),
             ]
@@ -362,9 +365,10 @@ class KeypairBackendOpensshBin(KeypairBackend):
         self.ssh_keygen = KeygenCommand(self.module)
 
     def _generate_keypair(self, private_key_path: str) -> None:
+        key_size = None if self.type in ("ed25519", "mldsa44") else self.size
         self.ssh_keygen.generate_keypair(
             private_key_path=private_key_path,
-            size=self.size,
+            size=key_size,
             key_type=self.type,
             comment=self.comment,
             check_rc=True,
@@ -422,9 +426,9 @@ class KeypairBackendCryptography(KeypairBackend):
     def __init__(self, *, module: AnsibleModule) -> None:
         super().__init__(module=module)
 
-        if self.type == "rsa1":
+        if self.type in ("rsa1", "mldsa44"):
             self.module.fail_json(
-                msg="RSA1 keys are not supported by the cryptography backend"
+                msg=f"{self.type} keys are not supported by the cryptography backend"
             )
 
         self.passphrase = (
