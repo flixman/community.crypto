@@ -427,9 +427,15 @@ class KeypairBackendCryptography(KeypairBackend):
     def __init__(self, *, module: AnsibleModule) -> None:
         super().__init__(module=module)
 
-        if self.type in ("rsa1", "mldsa44"):
+        if self.type == "rsa1":
             self.module.fail_json(
-                msg=f"{self.type} keys are not supported by the cryptography backend"
+                msg="rsa1 keys are not supported by the cryptography backend"
+            )
+        if self.type == "mldsa44":
+            self.module.fail_json(
+                msg="mldsa44 keys are not supported by the cryptography backend: "
+                "the cryptography library does not support OpenSSH format for ML-DSA keys. "
+                "Use backend=opensshbin (or backend=auto with ssh-keygen installed)."
             )
 
         self.passphrase = (
