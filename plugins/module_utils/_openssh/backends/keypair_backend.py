@@ -100,7 +100,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
                     + "cause this module to fail."
                 )
         elif self.type in ("ed25519", "mldsa44"):
-            # User input is ignored for `key size` when `key type` is ed25519
+            # User input is ignored for fixed-size key types
             result = 256
         else:
             return self.module.fail_json(
