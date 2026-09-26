@@ -68,7 +68,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
             self.module.params["type"]
         )
 
-        self.size: int = self._get_size(self.module.params["size"])
+        self.size: int | None = self._get_size(self.module.params["size"])
         self._validate_path()
 
         self.original_private_key: PrivateKey | None = None
@@ -76,7 +76,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
         self.private_key: PrivateKey | None = None
         self.public_key: PublicKey | None = None
 
-    def _get_size(self, size: int | None) -> int:
+    def _get_size(self, size: int | None) -> int | None:
         if self.type in ("rsa", "rsa1"):
             result = 4096 if size is None else size
             if result < 1024:
@@ -104,7 +104,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
             result = 256
         elif self.type == "mldsa44":
             # User input is ignored for fixed-size key types; ssh-keygen output decides reported size
-            result = 0
+            result = None
         else:
             return self.module.fail_json(
                 msg=f"{self.type} is not a valid value for key type"
