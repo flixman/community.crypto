@@ -367,10 +367,9 @@ class KeypairBackendOpensshBin(KeypairBackend):
         self.ssh_keygen = KeygenCommand(self.module)
 
     def _generate_keypair(self, private_key_path: str) -> None:
-        key_size = None if self.type == "mldsa44" else self.size
         self.ssh_keygen.generate_keypair(
             private_key_path=private_key_path,
-            size=key_size,
+            size=self.size,
             key_type=self.type,
             comment=self.comment,
             check_rc=True,
