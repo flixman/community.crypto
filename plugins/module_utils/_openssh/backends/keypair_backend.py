@@ -209,8 +209,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
 
         return all(
             [
-                self.type in ("ed25519", "mldsa44")
-                or self.size == self.original_private_key.size,
+                self.size is None or self.size == self.original_private_key.size,
                 self.type == self.original_private_key.type,
                 self._private_key_valid_backend(self.original_private_key),
             ]
