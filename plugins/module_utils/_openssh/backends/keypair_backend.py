@@ -99,9 +99,12 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
                     + "Attempting to use bit lengths other than these three values for ECDSA keys will "
                     + "cause this module to fail."
                 )
-        elif self.type in ("ed25519", "mldsa44"):
+        elif self.type == "ed25519":
             # User input is ignored for fixed-size key types
             result = 256
+        elif self.type == "mldsa44":
+            # User input is ignored for fixed-size key types; ssh-keygen output decides reported size
+            result = 0
         else:
             return self.module.fail_json(
                 msg=f"{self.type} is not a valid value for key type"
@@ -327,7 +330,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
         public_key = self.public_key or self.original_public_key
 
         return {
-            "size": self.size,
+            "size": private_key.size if private_key else self.size,
             "type": self.type,
             "filename": self.private_key_path,
             "fingerprint": private_key.fingerprint if private_key else "",
