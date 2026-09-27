@@ -53,7 +53,8 @@ def process_files(directory: pathlib.Path) -> tuple[CoverageFile, ...]:
         # Get flags from name
         flags = name.replace("-powershell", "").split("=")  # Drop '-powershell' suffix
         flags = [
-            flag if not flag.startswith("stub") else flag.split("-")[0] for flag in flags
+            flag if not flag.startswith("stub") else flag.split("-")[0]
+            for flag in flags
         ]  # Remove "-01" from stub files
 
         processed.append(CoverageFile(name, file, flags))
@@ -61,7 +62,9 @@ def process_files(directory: pathlib.Path) -> tuple[CoverageFile, ...]:
     return tuple(processed)
 
 
-def upload_files(codecov_bin: pathlib.Path, files: tuple[CoverageFile, ...], dry_run: bool = False) -> None:
+def upload_files(
+    codecov_bin: pathlib.Path, files: tuple[CoverageFile, ...], dry_run: bool = False
+) -> None:
     for file in files:
         cmd = [
             str(codecov_bin),
@@ -80,7 +83,9 @@ def upload_files(codecov_bin: pathlib.Path, files: tuple[CoverageFile, ...], dry
         subprocess.run(cmd, check=True)
 
 
-def download_file(url: str, dest: pathlib.Path, flags: int, dry_run: bool = False) -> None:
+def download_file(
+    url: str, dest: pathlib.Path, flags: int, dry_run: bool = False
+) -> None:
     if dry_run:
         print(f"DRY-RUN: Would download {url} to {dest} and set mode to {flags:o}")
         return

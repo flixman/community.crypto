@@ -6,10 +6,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: smoke_pyyaml
 short_description: Check whether PyYAML is present
@@ -18,11 +19,11 @@ author:
 description:
   - Check whether C(yaml) is present.
 options: {}
-'''
+"""
 
-EXAMPLES = r''' # '''
+EXAMPLES = r""" # """
 
-RETURN = r''' # '''
+RETURN = r""" # """
 
 import traceback
 
@@ -30,6 +31,7 @@ from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
 try:
     import yaml  # noqa: F401, pylint: disable=unused-import
+
     HAS_PYYAML = True
     PYYAML_IMP_ERR = None
 except ImportError as exc:
@@ -41,10 +43,10 @@ def main():
     module = AnsibleModule(argument_spec=dict(), supports_check_mode=True)
 
     if not HAS_PYYAML:
-        module.fail_json(msg=missing_required_lib('PyYAML'), exception=PYYAML_IMP_ERR)
+        module.fail_json(msg=missing_required_lib("PyYAML"), exception=PYYAML_IMP_ERR)
 
-    module.exit_json(msg='Everything is ok')
+    module.exit_json(msg="Everything is ok")
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()  # pragma: no cover

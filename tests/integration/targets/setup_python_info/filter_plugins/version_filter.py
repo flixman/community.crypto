@@ -6,11 +6,19 @@ from __future__ import annotations
 
 
 def get_major_minor_version(version):
-    parts = version.split('.')[:2]
-    return '.'.join(parts)
+    parts = version.split(".")[:2]
+    return ".".join(parts)
 
 
-def version_lookup(data, distribution, os_family, distribution_version, distribution_major_version, python_version, default_value=False):
+def version_lookup(
+    data,
+    distribution,
+    os_family,
+    distribution_version,
+    distribution_major_version,
+    python_version,
+    default_value=False,
+):
     if distribution in data:
         data = data[distribution]
     elif os_family in data:
@@ -31,10 +39,10 @@ def version_lookup(data, distribution, os_family, distribution_version, distribu
 
 
 class FilterModule:
-    """ IP address and network manipulation filters """
+    """IP address and network manipulation filters"""
 
     def filters(self):
         return {
-            'internal__get_major_minor_version': get_major_minor_version,
-            'internal__version_lookup': version_lookup,
+            "internal__get_major_minor_version": get_major_minor_version,
+            "internal__version_lookup": version_lookup,
         }

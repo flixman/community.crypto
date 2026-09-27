@@ -49,7 +49,9 @@ def main():
 
         for source_file in source_files:
             source_path = os.path.join(source, source_file)
-            destination_path = os.path.join(destination_directory, source_file + "." + label)
+            destination_path = os.path.join(
+                destination_directory, source_file + "." + label
+            )
             print(f'"{source_path}" -> "{destination_path}"')
             shutil.copyfile(source_path, destination_path)
             count += 1

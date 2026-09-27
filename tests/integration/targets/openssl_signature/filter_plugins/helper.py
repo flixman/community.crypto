@@ -18,9 +18,9 @@ def openssl_signatures_combiner(list_of_dicts):
 
 
 class FilterModule:
-    ''' Jinja2 compat filters '''
+    """Jinja2 compat filters"""
 
     def filters(self):
         return {
-            'openssl_signatures_combiner': openssl_signatures_combiner,
+            "openssl_signatures_combiner": openssl_signatures_combiner,
         }
