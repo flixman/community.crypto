@@ -25,7 +25,7 @@ from ansible_collections.community.crypto.plugins.module_utils._openssh.backends
     PublicKey,
     parse_private_key_format,
 )
-from ansible_collections.community.crypto.plugins.module_utils._openssh.cryptography import (
+from ansible_collections.community.crypto.plugins.module_utils._openssh.openssh_cryptography import (
     CRYPTOGRAPHY_VERSION,
     HAS_OPENSSH_SUPPORT,
     InvalidCommentError,

@@ -31,7 +31,7 @@ from ansible_collections.community.crypto.plugins.module_utils._time import (
 )
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    from ansible_collections.community.crypto.plugins.module_utils._openssh.cryptography import (
+    from ansible_collections.community.crypto.plugins.module_utils._openssh.openssh_cryptography import (
         PubKeyType,
     )
 

@@ -13,7 +13,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from ansible_collections.community.crypto.plugins.module_utils._openssh.cryptography import (
+from ansible_collections.community.crypto.plugins.module_utils._openssh.openssh_cryptography import (
     HAS_OPENSSH_SUPPORT,
     InvalidCommentError,
     InvalidKeySizeError,
@@ -25,7 +25,7 @@ from ansible_collections.community.crypto.plugins.module_utils._openssh.cryptogr
 )
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    from ansible_collections.community.crypto.plugins.module_utils._openssh.cryptography import (
+    from ansible_collections.community.crypto.plugins.module_utils._openssh.openssh_cryptography import (
         KeyType,
     )
 
