@@ -111,7 +111,10 @@
           - mldsa44_alias_output.type == 'mldsa44-ed25519'
           - mldsa44_alias_idempotent_output is not changed
           - mldsa44_alias_idempotent_output.type == 'mldsa44-ed25519'
-      when: mldsa44_alias_output is succeeded
+      when:
+        - mldsa44_alias_output is succeeded
+        - mldsa44_alias_idempotent_output is defined
+        - mldsa44_alias_idempotent_output is not skipped
 
     - name: "({{ backend }}) Remove mldsa44 alias key"
       community.crypto.openssh_keypair:
