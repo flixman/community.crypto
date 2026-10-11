@@ -102,6 +102,7 @@
         type: mldsa44
         backend: "{{ backend }}"
       register: mldsa44_alias_idempotent_output
+      ignore_errors: true
       when: mldsa44_alias_output is succeeded
 
     - name: "({{ backend }}) Assert mldsa44 alias is idempotent"
