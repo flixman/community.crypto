@@ -74,6 +74,45 @@
     backend: cryptography
     state: absent
 
+- name: Generate hybrid mldsa44-ed25519 key with cryptography backend
+  community.crypto.openssh_keypair:
+    path: '{{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
+    type: mldsa44-ed25519
+    passphrase: "{{ passphrase }}"
+    backend: cryptography
+  register: mldsa44_ed25519_hybrid_output
+  ignore_errors: true
+
+- name: Regenerate hybrid mldsa44-ed25519 key idempotently
+  community.crypto.openssh_keypair:
+    path: '{{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
+    type: mldsa44-ed25519
+    passphrase: "{{ passphrase }}"
+    backend: cryptography
+  register: mldsa44_ed25519_hybrid_idempotent_output
+  when: mldsa44_ed25519_hybrid_output is success
+
+- name: Ensure ssh-keygen can read hybrid mldsa44-ed25519 key
+  ansible.builtin.command: 'ssh-keygen -yf {{ remote_tmp_dir }}/mldsa44_ed25519_hybrid -P {{ passphrase }}'
+  register: mldsa44_ed25519_hybrid_ssh_keygen_output
+  when: mldsa44_ed25519_hybrid_output is success
+
+- name: Check hybrid mldsa44-ed25519 key behavior with cryptography backend
+  ansible.builtin.assert:
+    that:
+      - mldsa44_ed25519_hybrid_output is changed
+      - mldsa44_ed25519_hybrid_output.type == 'mldsa44-ed25519'
+      - mldsa44_ed25519_hybrid_idempotent_output is not changed
+      - mldsa44_ed25519_hybrid_ssh_keygen_output is success
+  when: mldsa44_ed25519_hybrid_output is success
+
+- name: Remove hybrid mldsa44-ed25519 key
+  community.crypto.openssh_keypair:
+    path: '{{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
+    backend: cryptography
+    state: absent
+  when: mldsa44_ed25519_hybrid_output is success
+
 - name: Generate PEM encoded key with passphrase
   ansible.builtin.command: 'ssh-keygen -t rsa -b 1280 -f {{ remote_tmp_dir }}/pem_encoded -N {{ passphrase }} -m PEM'
 

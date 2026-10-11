@@ -433,13 +433,8 @@ class KeypairBackendCryptography(KeypairBackend):
             self.module.fail_json(
                 msg="RSA1 keys are not supported by the cryptography backend"
             )
-        if self.type == "mldsa44-ed25519":
-            self.module.fail_json(
-                msg="Hybrid ML-DSA-44/Ed25519 keys (type=mldsa44-ed25519) are not supported by the cryptography backend: "
-                "the cryptography library does not support OpenSSH format for ML-DSA keys. "
-                "Use backend=opensshbin (or backend=auto with ssh-keygen installed)."
-            )
 
+        self.passphrase_string = module.params["passphrase"] or ""
         self.passphrase = (
             to_bytes(module.params["passphrase"])
             if module.params["passphrase"]
@@ -449,10 +444,23 @@ class KeypairBackendCryptography(KeypairBackend):
             "private_key_format"
         ]
         self.private_key_format = self._get_key_format(key_format)
+        self.ssh_keygen = (
+            KeygenCommand(self.module) if self.type == "mldsa44-ed25519" else None
+        )
 
     def _get_key_format(
         self, key_format: t.Literal["auto", "pkcs1", "pkcs8", "ssh"]
     ) -> t.Literal["SSH", "PKCS1", "PKCS8"]:
+        if self.type == "mldsa44-ed25519":
+            if key_format in ("pkcs1", "pkcs8"):
+                self.module.fail_json(
+                    msg=(
+                        "private_key_format must be 'auto' or 'ssh' for "
+                        "type=mldsa44-ed25519 with backend=cryptography"
+                    )
+                )
+            return "SSH"
+
         result: t.Literal["SSH", "PKCS1", "PKCS8"] = "SSH"
 
         if key_format == "auto":
@@ -473,6 +481,18 @@ class KeypairBackendCryptography(KeypairBackend):
 
     def _generate_keypair(self, private_key_path: str) -> None:
         assert self.type != "rsa1"
+        if self.type == "mldsa44-ed25519":
+            assert self.ssh_keygen is not None
+            self.ssh_keygen.generate_keypair(
+                private_key_path=private_key_path,
+                size=self.size,
+                key_type=self.type,
+                comment=self.comment,
+                passphrase=self.passphrase_string,
+                check_rc=True,
+            )
+            return
+
         keypair = OpensshKeypair.generate(
             keytype=self.type,
             size=self.size,
@@ -489,6 +509,15 @@ class KeypairBackendCryptography(KeypairBackend):
         secure_write(path=public_key_path, mode=0o644, content=keypair.public_key)
 
     def _get_private_key(self) -> PrivateKey:
+        if self.type == "mldsa44-ed25519":
+            assert self.ssh_keygen is not None
+            rc, private_key_content, err = self.ssh_keygen.get_private_key(
+                private_key_path=self.private_key_path, check_rc=False
+            )
+            if rc != 0:
+                raise ValueError(err)
+            return PrivateKey.from_string(private_key_content)
+
         keypair = OpensshKeypair.load(
             path=self.private_key_path, passphrase=self.passphrase, no_public_key=True
         )
@@ -501,6 +530,15 @@ class KeypairBackendCryptography(KeypairBackend):
         )
 
     def _get_public_key(self) -> PublicKey | t.Literal[""]:
+        if self.type == "mldsa44-ed25519":
+            assert self.ssh_keygen is not None
+            public_key_content = self.ssh_keygen.get_matching_public_key(
+                private_key_path=self.private_key_path,
+                passphrase=self.passphrase_string,
+                check_rc=True,
+            )[1]
+            return PublicKey.from_string(public_key_content)
+
         try:
             keypair = OpensshKeypair.load(
                 path=self.private_key_path,
@@ -514,6 +552,40 @@ class KeypairBackendCryptography(KeypairBackend):
         return PublicKey.from_string(to_text(keypair.public_key))
 
     def _private_key_readable(self) -> bool:
+        if self.type == "mldsa44-ed25519":
+            assert self.ssh_keygen is not None
+            rc, _stdout, stderr = self.ssh_keygen.get_matching_public_key(
+                private_key_path=self.private_key_path,
+                passphrase=self.passphrase_string,
+                check_rc=False,
+            )
+            if rc == 255 or any_in(
+                stderr,
+                "is not a public key file",
+                "incorrect passphrase",
+                "load failed",
+            ):
+                return False
+
+            if self.passphrase_string:
+                rc_without_passphrase, _stdout, stderr = (
+                    self.ssh_keygen.get_matching_public_key(
+                        private_key_path=self.private_key_path,
+                        check_rc=False,
+                    )
+                )
+                if not (
+                    rc_without_passphrase == 255
+                    or any_in(
+                        stderr,
+                        "is not a public key file",
+                        "incorrect passphrase",
+                        "load failed",
+                    )
+                ):
+                    return False
+            return True
+
         try:
             OpensshKeypair.load(
                 path=self.private_key_path,
@@ -537,6 +609,22 @@ class KeypairBackendCryptography(KeypairBackend):
         return True
 
     def _update_comment(self) -> None:
+        if self.type == "mldsa44-ed25519":
+            assert self.ssh_keygen is not None
+            ssh_version = self._get_ssh_version() or "7.8"
+            force_new_format = (
+                LooseVersion("6.5") <= LooseVersion(ssh_version) < LooseVersion("7.8")
+            )
+            self.ssh_keygen.update_comment(
+                private_key_path=self.private_key_path,
+                comment=self.comment or "",
+                old_passphrase=self.passphrase_string,
+                new_passphrase=self.passphrase_string,
+                force_new_format=force_new_format,
+                check_rc=True,
+            )
+            return
+
         assert self.comment is not None
         keypair = OpensshKeypair.load(
             path=self.private_key_path, passphrase=self.passphrase, no_public_key=True
@@ -553,6 +641,9 @@ class KeypairBackendCryptography(KeypairBackend):
             self.module.fail_json(msg=str(e))
 
     def _private_key_valid_backend(self, original_private_key: PrivateKey) -> bool:
+        if self.type == "mldsa44-ed25519":
+            return True
+
         # avoids breaking behavior and prevents
         # automatic conversions with OpenSSH upgrades
         if self.module.params["private_key_format"] == "auto":

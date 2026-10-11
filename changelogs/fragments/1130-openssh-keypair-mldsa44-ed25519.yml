@@ -2,3 +2,6 @@ bugfixes:
   - >-
     openssh_keypair - use only ``mldsa44-ed25519`` for OpenSSH ML-DSA-44 keys, since
     ``mldsa44`` is not a valid ``ssh-keygen`` key type.
+  - >-
+    openssh_keypair - support ``type=mldsa44-ed25519`` with ``backend=cryptography``
+    by using ``ssh-keygen`` for hybrid key operations.

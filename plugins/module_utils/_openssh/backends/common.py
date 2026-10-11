@@ -271,9 +271,10 @@ class KeygenCommand:
         size: int | None,
         key_type: str,
         comment: str | None,
+        passphrase: str = "",
         **kwargs: t.Unpack[_RunCommandKwarg],
     ) -> tuple[int, str, str]:
-        args = [self._bin_path, "-q", "-N", ""]
+        args = [self._bin_path, "-q", "-N", passphrase]
         if size is not None:
             args.extend(["-b", str(size)])
         args.extend(["-t", key_type, "-f", private_key_path, "-C", comment or ""])
@@ -291,10 +292,14 @@ class KeygenCommand:
         )
 
     def get_matching_public_key(
-        self, *, private_key_path: str, **kwargs: t.Unpack[_RunCommandKwarg]
+        self,
+        *,
+        private_key_path: str,
+        passphrase: str = "",
+        **kwargs: t.Unpack[_RunCommandKwarg],
     ) -> tuple[int, str, str]:
         return self._run_command(
-            [self._bin_path, "-P", "", "-y", "-f", private_key_path], **kwargs
+            [self._bin_path, "-P", passphrase, "-y", "-f", private_key_path], **kwargs
         )
 
     def get_private_key(
@@ -310,6 +315,8 @@ class KeygenCommand:
         private_key_path: str,
         comment: str,
         force_new_format: bool = True,
+        old_passphrase: str = "",
+        new_passphrase: str = "",
         **kwargs: t.Unpack[_RunCommandKwarg],
     ) -> tuple[int, str, str]:
         if os.path.exists(private_key_path) and not os.access(
@@ -325,7 +332,19 @@ class KeygenCommand:
         command = [self._bin_path, "-q"]
         if force_new_format:
             command.append("-o")
-        command.extend(["-c", "-C", comment, "-f", private_key_path])
+        command.extend(
+            [
+                "-P",
+                old_passphrase,
+                "-N",
+                new_passphrase,
+                "-c",
+                "-C",
+                comment,
+                "-f",
+                private_key_path,
+            ]
+        )
         return self._run_command(command, **kwargs)
 
 
