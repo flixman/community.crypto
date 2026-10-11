@@ -475,6 +475,7 @@ class KeypairBackendCryptography(KeypairBackend):
 
     def _generate_keypair(self, private_key_path: str) -> None:
         assert self.type != "rsa1"
+        assert self.type != "mldsa44-ed25519"
 
         keypair = OpensshKeypair.generate(
             keytype=self.type,
