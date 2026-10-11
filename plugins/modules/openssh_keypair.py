@@ -50,6 +50,7 @@ options:
     description:
       - The algorithm used to generate the SSH private key. V(rsa1) is for protocol version 1. V(rsa1) is deprecated and may
         not be supported by every version of ssh-keygen.
+      - The previously documented V(mldsa44) type has been replaced by V(mldsa44-ed25519).
       - V(mldsa44-ed25519) requires C(ssh-keygen), also with O(backend=cryptography).
     type: str
     default: rsa

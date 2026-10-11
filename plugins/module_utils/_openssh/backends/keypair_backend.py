@@ -522,7 +522,13 @@ class KeypairBackendCryptography(KeypairBackend):
             )
             if rc != 0:
                 raise ValueError(err)
-            return PrivateKey.from_string(private_key_content)
+            private_key = PrivateKey.from_string(private_key_content)
+            return PrivateKey(
+                size=private_key.size,
+                key_type=private_key.type,
+                fingerprint=private_key.fingerprint,
+                key_format=parse_private_key_format(path=self.private_key_path),
+            )
 
         keypair = OpensshKeypair.load(
             path=self.private_key_path, passphrase=self.passphrase, no_public_key=True
@@ -626,7 +632,7 @@ class KeypairBackendCryptography(KeypairBackend):
 
     def _private_key_valid_backend(self, original_private_key: PrivateKey) -> bool:
         if self.type == "mldsa44-ed25519":
-            return True
+            return original_private_key.format == "SSH"
 
         # avoids breaking behavior and prevents
         # automatic conversions with OpenSSH upgrades
