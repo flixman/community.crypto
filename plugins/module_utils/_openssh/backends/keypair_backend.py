@@ -597,7 +597,14 @@ class KeypairBackendCryptography(KeypairBackend):
     def _update_comment(self) -> None:
         if self.type == "mldsa44-ed25519":
             assert self.ssh_keygen is not None
-            ssh_version = self._get_ssh_version() or "7.8"
+            ssh_version = self._get_ssh_version()
+            if ssh_version is None:
+                self.module.fail_json(
+                    msg=(
+                        "Unable to determine OpenSSH version for "
+                        "type=mldsa44-ed25519 comment updates."
+                    )
+                )
             force_new_format = (
                 LooseVersion("6.5") <= LooseVersion(ssh_version) < LooseVersion("7.8")
             )
