@@ -119,7 +119,7 @@
         state: absent
         backend: "{{ backend }}"
       when: mldsa44_alias_output is succeeded
-  when: backend == 'opensshbin' and mldsa44_ed25519_output is defined and mldsa44_ed25519_output is succeeded
+  when: backend == 'opensshbin'
 
 - name: "({{ backend }}) Generate key - force"
   community.crypto.openssh_keypair:
