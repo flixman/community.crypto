@@ -559,18 +559,11 @@ class KeypairBackendCryptography(KeypairBackend):
     def _private_key_readable(self) -> bool:
         if self.type == "mldsa44-ed25519":
             assert self.ssh_keygen is not None
-            rc, _stdout, stderr = self.ssh_keygen.get_matching_public_key(
+            rc, _stdout, _stderr = self.ssh_keygen.get_matching_public_key(
                 private_key_path=self.private_key_path,
                 check_rc=False,
             )
-            if rc != 0 or any_in(
-                stderr,
-                "is not a public key file",
-                "incorrect passphrase",
-                "load failed",
-            ):
-                return False
-            return True
+            return rc == 0
 
         try:
             OpensshKeypair.load(
