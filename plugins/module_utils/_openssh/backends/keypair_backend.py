@@ -47,21 +47,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from ansible.module_utils.basic import AnsibleModule
 
 
-_MLDSA44_ALIASES = frozenset(("mldsa44", "mldsa44-ed25519"))
-_MLDSA44_CANONICAL_NAME = "mldsa44-ed25519"
-
-
-def _normalize_key_type(
-    key_type: str,
-) -> t.Literal["rsa", "dsa", "rsa1", "ecdsa", "ed25519", "mldsa44-ed25519"]:
-    if key_type in _MLDSA44_ALIASES:
-        return _MLDSA44_CANONICAL_NAME
-    return t.cast(
-        t.Literal["rsa", "dsa", "rsa1", "ecdsa", "ed25519", "mldsa44-ed25519"],
-        key_type,
-    )
-
-
 class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
     def __init__(self, *, module: AnsibleModule) -> None:
         super().__init__(module=module)
@@ -79,7 +64,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
         self.state: t.Literal["present", "absent"] = self.module.params["state"]
         self.type: t.Literal[
             "rsa", "dsa", "rsa1", "ecdsa", "ed25519", "mldsa44-ed25519"
-        ] = _normalize_key_type(self.module.params["type"])
+        ] = self.module.params["type"]
 
         self.size: int | None = self._get_size(self.module.params["size"])
         self._validate_path()
@@ -223,7 +208,7 @@ class KeypairBackend(OpensshModule, metaclass=abc.ABCMeta):
         return all(
             [
                 self.size is None or self.size == self.original_private_key.size,
-                self.type == _normalize_key_type(self.original_private_key.type),
+                self.type == self.original_private_key.type,
                 self._private_key_valid_backend(self.original_private_key),
             ]
         )
@@ -450,7 +435,7 @@ class KeypairBackendCryptography(KeypairBackend):
             )
         if self.type == "mldsa44-ed25519":
             self.module.fail_json(
-                msg="ML-DSA-44 keys (type=mldsa44-ed25519 or mldsa44) are not supported by the cryptography backend: "
+                msg="ML-DSA-44 keys (type=mldsa44-ed25519) are not supported by the cryptography backend: "
                 "the cryptography library does not support OpenSSH format for ML-DSA keys. "
                 "Use backend=opensshbin (or backend=auto with ssh-keygen installed)."
             )

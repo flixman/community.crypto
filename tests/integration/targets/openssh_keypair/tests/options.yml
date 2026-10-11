@@ -87,43 +87,6 @@
     backend: "{{ backend }}"
   when: backend == 'opensshbin'
 
-- block:
-    - name: "({{ backend }}) Generate mldsa44 key alias"
-      community.crypto.openssh_keypair:
-        path: "{{ remote_tmp_dir }}/default_size_mldsa44_alias"
-        type: mldsa44
-        backend: "{{ backend }}"
-      register: mldsa44_alias_output
-      ignore_errors: true
-
-    - name: "({{ backend }}) Regenerate mldsa44 key alias idempotently"
-      community.crypto.openssh_keypair:
-        path: "{{ remote_tmp_dir }}/default_size_mldsa44_alias"
-        type: mldsa44
-        backend: "{{ backend }}"
-      register: mldsa44_alias_idempotent_output
-      ignore_errors: true
-      when: mldsa44_alias_output is succeeded
-
-    - name: "({{ backend }}) Assert mldsa44 alias is idempotent"
-      ansible.builtin.assert:
-        that:
-          - mldsa44_alias_output is changed
-          - mldsa44_alias_output.type == 'mldsa44-ed25519'
-          - mldsa44_alias_idempotent_output is not changed
-          - mldsa44_alias_idempotent_output.type == 'mldsa44-ed25519'
-      when:
-        - mldsa44_alias_output is succeeded
-        - mldsa44_alias_idempotent_output is succeeded
-
-    - name: "({{ backend }}) Remove mldsa44 alias key"
-      community.crypto.openssh_keypair:
-        path: "{{ remote_tmp_dir }}/default_size_mldsa44_alias"
-        state: absent
-        backend: "{{ backend }}"
-      ignore_errors: true
-  when: backend == 'opensshbin'
-
 - name: "({{ backend }}) Generate key - force"
   community.crypto.openssh_keypair:
     path: "{{ remote_tmp_dir }}/force"

@@ -1,4 +1,4 @@
 bugfixes:
   - >-
-    openssh_keypair - use ``mldsa44-ed25519`` for OpenSSH ML-DSA-44 keys and keep
-    ``mldsa44`` as a compatibility alias to preserve idempotency with ``ssh-keygen``.
+    openssh_keypair - use only ``mldsa44-ed25519`` for OpenSSH ML-DSA-44 keys, since
+    ``mldsa44`` is not a valid ``ssh-keygen`` key type.
