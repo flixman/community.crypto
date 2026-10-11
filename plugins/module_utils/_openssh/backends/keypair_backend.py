@@ -450,7 +450,7 @@ class KeypairBackendCryptography(KeypairBackend):
             )
         if self.type == "mldsa44-ed25519":
             self.module.fail_json(
-                msg="ML-DSA-44 keys (type=mldsa44-ed25519) are not supported by the cryptography backend: "
+                msg="ML-DSA-44 keys (type=mldsa44-ed25519 or mldsa44) are not supported by the cryptography backend: "
                 "the cryptography library does not support OpenSSH format for ML-DSA keys. "
                 "Use backend=opensshbin (or backend=auto with ssh-keygen installed)."
             )
