@@ -78,7 +78,6 @@
   community.crypto.openssh_keypair:
     path: '{{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
     type: mldsa44-ed25519
-    passphrase: "{{ passphrase }}"
     backend: cryptography
   register: mldsa44_ed25519_hybrid_output
   ignore_errors: true
@@ -87,13 +86,12 @@
   community.crypto.openssh_keypair:
     path: '{{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
     type: mldsa44-ed25519
-    passphrase: "{{ passphrase }}"
     backend: cryptography
   register: mldsa44_ed25519_hybrid_idempotent_output
   when: mldsa44_ed25519_hybrid_output is success
 
 - name: Ensure ssh-keygen can read hybrid mldsa44-ed25519 key
-  ansible.builtin.command: 'ssh-keygen -yf {{ remote_tmp_dir }}/mldsa44_ed25519_hybrid -P {{ passphrase }}'
+  ansible.builtin.command: 'ssh-keygen -yf {{ remote_tmp_dir }}/mldsa44_ed25519_hybrid'
   register: mldsa44_ed25519_hybrid_ssh_keygen_output
   when: mldsa44_ed25519_hybrid_output is success
 

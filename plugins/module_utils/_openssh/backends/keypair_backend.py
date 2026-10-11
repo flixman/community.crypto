@@ -433,8 +433,15 @@ class KeypairBackendCryptography(KeypairBackend):
             self.module.fail_json(
                 msg="RSA1 keys are not supported by the cryptography backend"
             )
+        if self.type == "mldsa44-ed25519" and module.params["passphrase"]:
+            self.module.fail_json(
+                msg=(
+                    "Passphrases are not supported for type=mldsa44-ed25519 with "
+                    "backend=cryptography. Use backend=opensshbin for passphrase-protected "
+                    "hybrid keys."
+                )
+            )
 
-        self.passphrase_string = module.params["passphrase"] or ""
         self.passphrase = (
             to_bytes(module.params["passphrase"])
             if module.params["passphrase"]
@@ -488,7 +495,6 @@ class KeypairBackendCryptography(KeypairBackend):
                 size=self.size,
                 key_type=self.type,
                 comment=self.comment,
-                passphrase=self.passphrase_string,
                 check_rc=True,
             )
             return
@@ -534,7 +540,6 @@ class KeypairBackendCryptography(KeypairBackend):
             assert self.ssh_keygen is not None
             public_key_content = self.ssh_keygen.get_matching_public_key(
                 private_key_path=self.private_key_path,
-                passphrase=self.passphrase_string,
                 check_rc=True,
             )[1]
             return PublicKey.from_string(public_key_content)
@@ -556,7 +561,6 @@ class KeypairBackendCryptography(KeypairBackend):
             assert self.ssh_keygen is not None
             rc, _stdout, stderr = self.ssh_keygen.get_matching_public_key(
                 private_key_path=self.private_key_path,
-                passphrase=self.passphrase_string,
                 check_rc=False,
             )
             if rc != 0 or any_in(
@@ -566,24 +570,6 @@ class KeypairBackendCryptography(KeypairBackend):
                 "load failed",
             ):
                 return False
-
-            if self.passphrase_string:
-                rc_without_passphrase, _stdout, stderr = (
-                    self.ssh_keygen.get_matching_public_key(
-                        private_key_path=self.private_key_path,
-                        check_rc=False,
-                    )
-                )
-                if not (
-                    rc_without_passphrase == 255
-                    or any_in(
-                        stderr,
-                        "is not a public key file",
-                        "incorrect passphrase",
-                        "load failed",
-                    )
-                ):
-                    return False
             return True
 
         try:
@@ -618,7 +604,6 @@ class KeypairBackendCryptography(KeypairBackend):
             self.ssh_keygen.update_comment(
                 private_key_path=self.private_key_path,
                 comment=self.comment or "",
-                passphrase=self.passphrase_string,
                 force_new_format=force_new_format,
                 check_rc=True,
             )

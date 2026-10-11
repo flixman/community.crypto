@@ -74,6 +74,7 @@ options:
     description:
       - Passphrase used to decrypt an existing private key or encrypt a newly generated private key.
       - Passphrases are not supported for O(type=rsa1).
+      - Passphrases are not supported for O(type=mldsa44-ed25519) when O(backend=cryptography).
       - Can only be used when O(backend=cryptography), or when O(backend=auto) and a required C(cryptography) version is installed.
         Note that depending on the cryptography version, the C(bcrypt) package is also needed.
     type: str
