@@ -433,12 +433,12 @@ class KeypairBackendCryptography(KeypairBackend):
             self.module.fail_json(
                 msg="RSA1 keys are not supported by the cryptography backend"
             )
-        if self.type == "mldsa44-ed25519" and module.params["passphrase"]:
+        if self.type == "mldsa44-ed25519":
             self.module.fail_json(
                 msg=(
-                    "Passphrases are not supported for type=mldsa44-ed25519 with "
-                    "backend=cryptography. Use backend=opensshbin for passphrase-protected "
-                    "hybrid keys."
+                    "Hybrid ML-DSA-44/Ed25519 keys (type=mldsa44-ed25519) are not "
+                    "supported by the cryptography backend. Use backend=opensshbin "
+                    "(or backend=auto with ssh-keygen installed)."
                 )
             )
 
@@ -451,23 +451,10 @@ class KeypairBackendCryptography(KeypairBackend):
             "private_key_format"
         ]
         self.private_key_format = self._get_key_format(key_format)
-        self.ssh_keygen = (
-            KeygenCommand(self.module) if self.type == "mldsa44-ed25519" else None
-        )
 
     def _get_key_format(
         self, key_format: t.Literal["auto", "pkcs1", "pkcs8", "ssh"]
     ) -> t.Literal["SSH", "PKCS1", "PKCS8"]:
-        if self.type == "mldsa44-ed25519":
-            if key_format in ("pkcs1", "pkcs8"):
-                self.module.fail_json(
-                    msg=(
-                        "private_key_format must be 'auto' or 'ssh' for "
-                        "type=mldsa44-ed25519 with backend=cryptography"
-                    )
-                )
-            return "SSH"
-
         result: t.Literal["SSH", "PKCS1", "PKCS8"] = "SSH"
 
         if key_format == "auto":
@@ -488,16 +475,6 @@ class KeypairBackendCryptography(KeypairBackend):
 
     def _generate_keypair(self, private_key_path: str) -> None:
         assert self.type != "rsa1"
-        if self.type == "mldsa44-ed25519":
-            assert self.ssh_keygen is not None
-            self.ssh_keygen.generate_keypair(
-                private_key_path=private_key_path,
-                size=self.size,
-                key_type=self.type,
-                comment=self.comment,
-                check_rc=True,
-            )
-            return
 
         keypair = OpensshKeypair.generate(
             keytype=self.type,
@@ -515,21 +492,6 @@ class KeypairBackendCryptography(KeypairBackend):
         secure_write(path=public_key_path, mode=0o644, content=keypair.public_key)
 
     def _get_private_key(self) -> PrivateKey:
-        if self.type == "mldsa44-ed25519":
-            assert self.ssh_keygen is not None
-            rc, private_key_content, err = self.ssh_keygen.get_private_key(
-                private_key_path=self.private_key_path, check_rc=False
-            )
-            if rc != 0:
-                raise ValueError(err)
-            private_key = PrivateKey.from_string(private_key_content)
-            return PrivateKey(
-                size=private_key.size,
-                key_type=private_key.type,
-                fingerprint=private_key.fingerprint,
-                key_format=parse_private_key_format(path=self.private_key_path),
-            )
-
         keypair = OpensshKeypair.load(
             path=self.private_key_path, passphrase=self.passphrase, no_public_key=True
         )
@@ -542,14 +504,6 @@ class KeypairBackendCryptography(KeypairBackend):
         )
 
     def _get_public_key(self) -> PublicKey | t.Literal[""]:
-        if self.type == "mldsa44-ed25519":
-            assert self.ssh_keygen is not None
-            public_key_content = self.ssh_keygen.get_matching_public_key(
-                private_key_path=self.private_key_path,
-                check_rc=True,
-            )[1]
-            return PublicKey.from_string(public_key_content)
-
         try:
             keypair = OpensshKeypair.load(
                 path=self.private_key_path,
@@ -563,14 +517,6 @@ class KeypairBackendCryptography(KeypairBackend):
         return PublicKey.from_string(to_text(keypair.public_key))
 
     def _private_key_readable(self) -> bool:
-        if self.type == "mldsa44-ed25519":
-            assert self.ssh_keygen is not None
-            rc, _stdout, _stderr = self.ssh_keygen.get_matching_public_key(
-                private_key_path=self.private_key_path,
-                check_rc=False,
-            )
-            return rc == 0
-
         try:
             OpensshKeypair.load(
                 path=self.private_key_path,
@@ -594,27 +540,6 @@ class KeypairBackendCryptography(KeypairBackend):
         return True
 
     def _update_comment(self) -> None:
-        if self.type == "mldsa44-ed25519":
-            assert self.ssh_keygen is not None
-            ssh_version = self._get_ssh_version()
-            if ssh_version is None:
-                self.module.fail_json(
-                    msg=(
-                        "Unable to determine OpenSSH version for "
-                        "type=mldsa44-ed25519 comment updates."
-                    )
-                )
-            force_new_format = (
-                LooseVersion("6.5") <= LooseVersion(ssh_version) < LooseVersion("7.8")
-            )
-            self.ssh_keygen.update_comment(
-                private_key_path=self.private_key_path,
-                comment=self.comment or "",
-                force_new_format=force_new_format,
-                check_rc=True,
-            )
-            return
-
         assert self.comment is not None
         keypair = OpensshKeypair.load(
             path=self.private_key_path, passphrase=self.passphrase, no_public_key=True
@@ -631,9 +556,6 @@ class KeypairBackendCryptography(KeypairBackend):
             self.module.fail_json(msg=str(e))
 
     def _private_key_valid_backend(self, original_private_key: PrivateKey) -> bool:
-        if self.type == "mldsa44-ed25519":
-            return original_private_key.format == "SSH"
-
         # avoids breaking behavior and prevents
         # automatic conversions with OpenSSH upgrades
         if self.module.params["private_key_format"] == "auto":
