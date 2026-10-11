@@ -315,8 +315,7 @@ class KeygenCommand:
         private_key_path: str,
         comment: str,
         force_new_format: bool = True,
-        old_passphrase: str = "",
-        new_passphrase: str = "",
+        passphrase: str = "",
         **kwargs: t.Unpack[_RunCommandKwarg],
     ) -> tuple[int, str, str]:
         if os.path.exists(private_key_path) and not os.access(
@@ -335,9 +334,9 @@ class KeygenCommand:
         command.extend(
             [
                 "-P",
-                old_passphrase,
+                passphrase,
                 "-N",
-                new_passphrase,
+                passphrase,
                 "-c",
                 "-C",
                 comment,

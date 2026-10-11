@@ -559,7 +559,7 @@ class KeypairBackendCryptography(KeypairBackend):
                 passphrase=self.passphrase_string,
                 check_rc=False,
             )
-            if rc == 255 or any_in(
+            if rc != 0 or any_in(
                 stderr,
                 "is not a public key file",
                 "incorrect passphrase",
@@ -618,8 +618,7 @@ class KeypairBackendCryptography(KeypairBackend):
             self.ssh_keygen.update_comment(
                 private_key_path=self.private_key_path,
                 comment=self.comment or "",
-                old_passphrase=self.passphrase_string,
-                new_passphrase=self.passphrase_string,
+                passphrase=self.passphrase_string,
                 force_new_format=force_new_format,
                 check_rc=True,
             )
