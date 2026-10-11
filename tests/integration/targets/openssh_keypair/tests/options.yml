@@ -118,7 +118,7 @@
         path: "{{ remote_tmp_dir }}/default_size_mldsa44_alias"
         state: absent
         backend: "{{ backend }}"
-      when: mldsa44_alias_output is succeeded and mldsa44_alias_idempotent_output is defined
+      when: mldsa44_alias_output is succeeded
   when: backend == 'opensshbin' and mldsa44_ed25519_output is defined and mldsa44_ed25519_output is succeeded
 
 - name: "({{ backend }}) Generate key - force"
