@@ -78,14 +78,14 @@
     that:
       - mldsa44_ed25519_output is changed
       - mldsa44_ed25519_output.type == 'mldsa44-ed25519'
-  when: backend == 'opensshbin'
+  when: backend == 'opensshbin' and mldsa44_ed25519_output is succeeded
 
 - name: "({{ backend }}) Remove mldsa44-ed25519 key"
   community.crypto.openssh_keypair:
     path: "{{ remote_tmp_dir }}/default_size_mldsa44_ed25519"
     state: absent
     backend: "{{ backend }}"
-  when: backend == 'opensshbin' and mldsa44_ed25519_output is defined and mldsa44_ed25519_output is succeeded
+  when: backend == 'opensshbin'
 
 - block:
     - name: "({{ backend }}) Generate mldsa44 key alias"
