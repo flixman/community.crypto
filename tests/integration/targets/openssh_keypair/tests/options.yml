@@ -121,6 +121,7 @@
         path: "{{ remote_tmp_dir }}/default_size_mldsa44_alias"
         state: absent
         backend: "{{ backend }}"
+      ignore_errors: true
   when: backend == 'opensshbin'
 
 - name: "({{ backend }}) Generate key - force"
