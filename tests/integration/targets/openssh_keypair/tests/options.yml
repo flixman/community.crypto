@@ -85,7 +85,7 @@
     path: "{{ remote_tmp_dir }}/default_size_mldsa44_ed25519"
     state: absent
     backend: "{{ backend }}"
-  when: backend == 'opensshbin'
+  when: backend == 'opensshbin' and mldsa44_ed25519_output is defined and mldsa44_ed25519_output is not skipped
 
 - name: "({{ backend }}) Generate key - force"
   community.crypto.openssh_keypair:
